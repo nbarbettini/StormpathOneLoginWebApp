@@ -7,6 +7,9 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Stormpath.AspNetCore;
+using Stormpath.Configuration.Abstractions;
+using Stormpath.SDK.Application;
 
 namespace StormpathOneLoginWebApp
 {
@@ -35,7 +38,14 @@ namespace StormpathOneLoginWebApp
         {
             // Add framework services.
             services.AddApplicationInsightsTelemetry(Configuration);
-
+            services.AddStormpath(new StormpathConfiguration()
+            {
+                Application = new ApplicationConfiguration()
+                {
+                    Name = "StormpathOneLoginWebAppTest"
+                }
+            });
+            
             services.AddMvc();
         }
 
@@ -58,7 +68,7 @@ namespace StormpathOneLoginWebApp
             }
 
             app.UseApplicationInsightsExceptionTelemetry();
-
+            app.UseStormpath();
             app.UseStaticFiles();
 
             app.UseMvc(routes =>
