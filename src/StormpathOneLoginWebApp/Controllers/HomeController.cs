@@ -1,19 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Stormpath.Owin.Abstractions;
 using Stormpath.SDK.Application;
+using Stormpath.SDK.Client;
 
 namespace StormpathOneLoginWebApp.Controllers
 {
     public class HomeController : Controller
     {
-        private IApplication _stormpathApp;
+        private readonly IApplication _stormpathApp;
+        private readonly IClient _stormpathClient;
 
-        public HomeController(IApplication stormpathApp)
+        public HomeController(IApplication stormpathApp, IClient stormpathClient)
         {
             _stormpathApp = stormpathApp;
+            _stormpathClient = stormpathClient;
         }
 
         public ActionResult Index()
@@ -43,16 +44,14 @@ namespace StormpathOneLoginWebApp.Controllers
 
         public async Task<ActionResult> LoginViaSaml()
         {
-            var app = await _stormpathApp.Client.GetApplicationAsync("https://api.stormpath.com/v1/applications/3kmxAP6YTdzAqEXD1e9UN3"); // Your Stormpath Application href
+            var stateToken = new StateTokenBuilder(_stormpathClient, _stormpathClient.Configuration.Client.ApiKey)
+                .ToString();
 
-            var samlUrlBuilder = await app.NewSamlIdpUrlBuilderAsync();
+            var samlUrlBuilder = await _stormpathApp.NewSamlIdpUrlBuilderAsync();
             var redirectUrl = samlUrlBuilder
-                .SetCallbackUri("http://localhost:49980/loginredirect") // The URL to your callback controller, see below
+                .SetCallbackUri("http://localhost:49980/stormpathCallback") // Make sure this points to your web app URI!
+                .SetState(stateToken)
                 .Build();
-
-            HttpContext.Response.Headers.Add("Cache-control", "no-cache, no-store");
-            HttpContext.Response.Headers.Add("Pragma", "no-cache");
-            HttpContext.Response.Headers.Add("Expires", "-1");
 
             return Redirect(redirectUrl);
         }
